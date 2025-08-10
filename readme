@@ -1,0 +1,274 @@
+# Markdown文档处理服务
+
+基于FastAPI的格式感知Markdown文档处理服务，集成T5文本纠错和Presidio隐私脱敏功能，专为Dify工作流设计。
+
+## 🌟 核心特性
+
+- **格式感知处理**: 使用markdown-it解析器，确保标题、列表、代码块等格式不被破坏
+- **智能文本纠错**: 集成T5模型，仅对纯文本段落进行纠错
+- **隐私信息脱敏**: 使用Presidio自动识别和脱敏姓名、电话、邮箱等敏感信息
+- **动态文本分割**: 根据文档长度智能决定是否分块处理
+- **异步处理支持**: 支持同步和异步两种处理模式
+- **Dify友好接口**: 专门优化的API接口，便于集成到Dify工作流
+- **Docker部署**: 提供完整的Docker部署方案
+
+## 🏗️ 架构设计
+
+```
+PDF文档 → MinerU转换 → Markdown处理服务 → 分块结果 → 后续流程
+                     ↓
+               [格式解析] → [文本提取] → [T5纠错] → [隐私脱敏] → [重组输出]
+```
+
+## 📋 API接口
+
+### 健康检查
+```http
+GET /health
+```
+
+### 同步处理（推荐用于Dify）
+```http
+POST /dify/process
+Content-Type: application/json
+
+{
+  "markdown_content": "# 标题\n内容...",
+  "config": {
+    "no_split_threshold": 8000,
+    "chunk_size": 7000,
+    "chunk_overlap": 500
+  }
+}
+```
+
+### 异步处理（适合大文件）
+```http
+POST /process-async
+Content-Type: application/json
+
+{
+  "markdown_content": "# 标题\n内容...",
+  "config": {...}
+}
+```
+
+### 查询任务状态
+```http
+GET /task/{task_id}
+```
+
+### 文件上传
+```http
+POST /upload-markdown
+Content-Type: multipart/form-data
+
+file: markdown_file.md
+```
+
+## 🚀 快速开始
+
+### 1. 克隆项目
+```bash
+git clone <项目地址>
+cd markdown-processor
+```
+
+### 2. 配置环境
+```bash
+# 复制环境变量文件
+cp .env.example .env
+
+# 根据需要修改配置
+vim .env
+```
+
+### 3. 一键部署
+```bash
+# 给脚本执行权限
+chmod +x deploy.sh manage.sh
+
+# 执行部署
+./deploy.sh
+```
+
+### 4. 验证部署
+```bash
+# 健康检查
+curl http://localhost:8000/health
+
+# 运行测试
+./manage.sh test
+```
+
+## 🛠️ 管理命令
+
+```bash
+# 启动服务
+./manage.sh start
+
+# 停止服务
+./manage.sh stop
+
+# 重启服务
+./manage.sh restart
+
+# 查看状态
+./manage.sh status
+
+# 查看日志
+./manage.sh logs
+
+# 健康检查
+./manage.sh health
+
+# 清理数据
+./manage.sh clean
+
+# 更新服务
+./manage.sh update
+
+# 备份数据
+./manage.sh backup
+
+# 监控服务
+./manage.sh monitor
+
+# 运行测试
+./manage.sh test
+```
+
+## 🔧 配置说明
+
+### 环境变量配置
+```bash
+# 服务配置
+DEBUG=false
+LOG_LEVEL=INFO
+MAX_CONCURRENT_TASKS=3
+
+# 模型配置
+MODEL_NAME=deepseek-7b
+T5_MODEL_PATH=/app/models/t5_model
+SPACY_MODEL_PATH=zh_core_web_md
+
+# 文件配置
+MAX_FILE_SIZE=52428800  # 50MB
+```
+
+### 处理配置
+```json
+{
+  "no_split_threshold": 8000,    // 不分割阈值
+  "chunk_size": 7000,            // 分块大小
+  "chunk_overlap": 500           // 分块重叠
+}
+```
+
+## 🔌 Dify集成
+
+### HTTP节点配置
+```json
+{
+  "method": "POST",
+  "url": "http://markdown-processor:8000/dify/process",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "markdown_content": "{{previous_node.markdown_content}}",
+    "config": {
+      "no_split_threshold": 8000,
+      "chunk_size": 7000,
+      "chunk_overlap": 500
+    }
+  },
+  "timeout": 300
+}
+```
+
+### 完整工作流示例
+```
+1. [文件上传] → 上传PDF文件
+2. [MinerU转换] → PDF转Markdown
+3. [Markdown处理] → 纠错和脱敏
+4. [向量化] → 生成向量
+5. [存储] → 保存到知识库
+```
+
+## 📊 性能优化
+
+### 资源配置
+- **内存**: 建议4GB以上
+- **CPU**: 建议2核以上
+- **存储**: 预留10GB用于模型和缓存
+
+### 优化建议
+1. **模型预加载**: 将模型文件挂载到容器中
+2. **并发控制**: 根据资源情况调整`MAX_CONCURRENT_TASKS`
+3. **缓存策略**: 对相同内容启用缓存
+4. **负载均衡**: 多实例部署时使用Nginx负载均衡
+
+## 🐛 故障排除
+
+### 常见问题
+
+1. **模型下载失败**
+   ```bash
+   # 手动下载spaCy模型
+   docker exec -it markdown-processor python -m spacy download zh_core_web_md
+   ```
+
+2. **内存不足**
+   ```bash
+   # 调整Docker内存限制
+   docker-compose up -d --scale markdown-processor=1
+   ```
+
+3. **处理超时**
+   ```bash
+   # 增加超时时间或改用异步处理
+   curl -X POST -d '{"timeout": 600, ...}' http://localhost:8000/process-async
+   ```
+
+### 日志查看
+```bash
+# 查看应用日志
+./manage.sh logs
+
+# 查看系统日志
+docker logs markdown-processor
+
+# 查看错误日志
+docker exec -it markdown-processor tail -f /app/logs/app.log
+```
+
+## 🔒 安全考虑
+
+1. **敏感信息**: 确保脱敏配置正确
+2. **文件上传**: 限制文件大小和类型
+3. **网络访问**: 在生产环境中使用防火墙
+4. **日志安全**: 避免在日志中记录敏感信息
+
+## 🤝 贡献指南
+
+1. Fork项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开Pull Request
+
+## 📝 许可证
+
+本项目采用MIT许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+
+## 📞 支持
+
+如有问题或建议，请：
+1. 创建Issue
+2. 查看文档
+3. 联系维护者
+
+---
+
+**注意**: 首次启动时模型下载可能需要较长时间，请耐心等待。建议在生产环境中预先下载模型文件。

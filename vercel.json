@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "main.py"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": ".",
+    "TRANSFORMERS_CACHE": "/tmp/transformers_cache",
+    "HF_HOME": "/tmp/hf_cache"
+  },
+  "functions": {
+    "main.py": {
+      "maxDuration": 300
+    }
+  }
+}
