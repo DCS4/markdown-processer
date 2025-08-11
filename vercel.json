@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "main.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "main.py"
+      "dest": "api/index.py"
     }
   ],
   "env": {
@@ -18,8 +18,21 @@
     "HF_HOME": "/tmp/hf_cache"
   },
   "functions": {
-    "main.py": {
+    "api/index.py": {
       "maxDuration": 300
     }
-  }
+  },
+  "excludeFiles": [
+    "Dockerfile",
+    "docker-compose.yml",
+    "requirements-base.txt",
+    "requirements-torch.txt",
+    "model-cache/**",
+    "whl/**",
+    "logs/**",
+    "uploads/**",
+    "*.md",
+    "deploy.sh",
+    "nginx.conf"
+  ]
 }

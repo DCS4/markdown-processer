@@ -14,8 +14,8 @@ import ftfy
 from datetime import datetime
 
 # 导入处理器
-from improved_markdown_processor import ImprovedMarkdownProcessor
-from config import settings
+from .improved_markdown_processor import ImprovedMarkdownProcessor
+from .config import settings
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
