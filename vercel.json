@@ -17,11 +17,7 @@
     "TRANSFORMERS_CACHE": "/tmp/transformers_cache",
     "HF_HOME": "/tmp/hf_cache"
   },
-  "functions": {
-    "api/index.py": {
-      "maxDuration": 300
-    }
-  },
+
   "excludeFiles": [
     "Dockerfile",
     "docker-compose.yml",
